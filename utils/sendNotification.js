@@ -1,7 +1,7 @@
 const { initializeApp, cert, getApps } = require("firebase-admin/app");
 const { getMessaging } = require("firebase-admin/messaging");
 
-const serviceAccount = require("../config/serviceAccountKey.json");
+const serviceAccount = require("../serviceAccountKey.json");
 
 const app = getApps().length
   ? getApps()[0]
