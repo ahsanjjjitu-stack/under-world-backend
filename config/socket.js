@@ -45,6 +45,7 @@ const initSocket = (server) => {
 
 
         socket.on("register_user", async (userId) => {
+             console.log("A user ID : " + userId);
             
             try {
                 await pubClient.hset("online_users", userId.toString(), socket.id);
