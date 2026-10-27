@@ -135,11 +135,18 @@ const confirmOrder = async (req, res) => {
             data: updatedOrder
         });
 
+
+
         setImmediate(async () => {
             try {
+                console.log("🔍 Background notification job started for order ID:", order._id);
+
                 const io = getIO();
                 const userId = order.userId;
+                console.log("🔍 Extracted order.userId:", userId);
+
                 const user = await User.findById(userId);
+                console.log("🔍 Database query result for user:", user ? user._id : "User is NULL/Not Found!");
 
                 if (user) {
                     await sendAppNotification(io, {
@@ -150,12 +157,16 @@ const confirmOrder = async (req, res) => {
                         orderId: updatedOrder._id,
                         fcmToken: user.fcmToken
                     });
-                    console.log(`Order confirmation notification sent to user: ${userId}`);
+                    console.log(`✅ Order confirmation notification sent to user: ${userId}`);
+                } else {
+                    console.log(`❌ User with ID ${userId} was not found in the database!`);
                 }
             } catch (notifError) {
-                console.error("Error sending notification in background:", notifError);
+                console.error("❌ Error sending notification in background catch block:", notifError);
             }
         });
+
+        
 
     }
     catch (error) {
