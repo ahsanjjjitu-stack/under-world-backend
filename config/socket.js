@@ -47,7 +47,7 @@ const initSocket = (server) => {
         socket.on("register_user", async (userId) => {
             
             try {
-                await pubClient.hest("online_users", userId.toString(), socket.id);
+                await pubClient.hset("online_users", userId.toString(), socket.id);
                 console.log(`User registered in Redis: ${userId} -> ${socket.id}`);
             }
             catch (err) {
