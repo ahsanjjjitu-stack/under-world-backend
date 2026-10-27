@@ -107,13 +107,18 @@ const getIO = () => {
 
 const getSocketId = async (userId) => {
     try {
-        return await pubClient.hget("online_users", userId.toString());
+        const redisQuery = pubClient.hget("online_users", userId.toString());
+        const timeout = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Redis operation timed out")), 3000)
+        );
+
+        return await Promise.race([redisQuery, timeout]);
     }
     catch (err) {
-        console.error("Error getting socket ID from Redis:", err);
-        return null;
+        console.error("⚠️ Redis getSocketId warning/timeout, falling back to FCM:", err.message);
+        return null; 
     }
-}
+};
 
 
 module.exports = { initSocket, getIO, getSocketId };
