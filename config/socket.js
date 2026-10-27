@@ -20,30 +20,6 @@ const subClient = pubClient.duplicate();
 
 
 
-pubClient.on('connect', () => {
-    console.log('✅ Redis Pub Connected!');
-});
-
-pubClient.on('ready', () => {
-    console.log('🚀 Redis Pub Client Ready!');
-});
-
-pubClient.on('error', (err) => {
-    console.error('❌ Redis Pub Error:', err.message);
-});
-
-subClient.on('error', (err) => {
-    console.error('❌ Redis Sub Error:', err.message);
-});
-
-pubClient.on('close', () => console.log('🔌 Pub closed'));
-pubClient.on('reconnecting', () => console.log('🔁 Pub reconnecting...'));
-pubClient.on('end', () => console.log('⛔ Pub ended'));
-subClient.on('connect', () => console.log('✅ Sub Connected'));
-subClient.on('ready', () => console.log('🚀 Sub Ready'));
-
-
-
 
 
 

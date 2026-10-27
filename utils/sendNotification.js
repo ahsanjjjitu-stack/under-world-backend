@@ -14,7 +14,7 @@ console.log("Firebase Admin Initialized Successfully!");
 const sendFCMNotification = async (fcmToken, payload) => {
   try {
     if (!fcmToken) {
-      console.log("FCM token missing.");
+      console.log("❌ FCM token missing in database for this user.");
       return;
     }
 
@@ -33,10 +33,14 @@ const sendFCMNotification = async (fcmToken, payload) => {
 
     const response = await getMessaging(app).send(message);
 
-    console.log("FCM Notification sent successfully:", response);
+    console.log("🚀 FCM Notification sent successfully:", response);
     return response;
   } catch (error) {
-    console.error("Error sending FCM notification:", error);
+    // 🔍 ফায়ারবেসের আসল এরর দেখার জন্য ডিটেইলড লগ
+    console.error("❌ Error sending FCM notification:", error.message);
+    if (error.errorInfo) {
+      console.error("Firebase Error Info:", JSON.stringify(error.errorInfo, null, 2));
+    }
   }
 };
 
