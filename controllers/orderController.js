@@ -3,7 +3,7 @@ const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const User = require('../models/User');
 const Notification = require("../models/Notification");
-const { getIO, onlineUsers } = require('../config/socket');
+const { getIO, getSocketId } = require('../config/socket');
 const { sendAppNotification } = require('../utils/notificationService');
 
 
@@ -68,7 +68,7 @@ const placeOrder = async (req, res) => {
             if (admins && admins.length > 0) {
 
                 for (const admin of admins) {
-                    await sendAppNotification(io, onlineUsers, {
+                    await sendAppNotification(io, getSocketId, {
                         recipientId: admin._id,
                         title: "New order has arrived!",
                         body: `New order has been placed. Total amount: ৳${savedOrder.totalAmount}`,
@@ -142,7 +142,7 @@ const confirmOrder = async (req, res) => {
             const user = await User.findById(userId);
 
             if (user) {
-                await sendAppNotification(io, onlineUsers, {
+                await sendAppNotification(io, getSocketId, {
                     recipientId: user._id,
                     title: "Your Order confirmed!",
                     body: `Order number #${updatedOrder._id.toString().slice(-6)} Successfully confirmed.`,
