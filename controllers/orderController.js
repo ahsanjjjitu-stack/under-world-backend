@@ -136,6 +136,8 @@ const confirmOrder = async (req, res) => {
         });
 
 
+        console.log("🔍 Background order ID:", order._id);
+
 
         setImmediate(async () => {
             try {
@@ -166,7 +168,9 @@ const confirmOrder = async (req, res) => {
             }
         });
 
-        
+
+
+
 
     }
     catch (error) {
