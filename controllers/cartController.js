@@ -50,7 +50,7 @@ const addCart = async (req, res) => {
 
 
 
-        let cart = await Cart.findOne()
+        let cart = await Cart.findOne({ userId }); 
         if (!cart) {
             cart = new Cart({
                 userId,
