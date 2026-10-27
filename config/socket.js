@@ -3,30 +3,29 @@ const { createAdapter } = require("@socket.io/redis-adapter");
 const Redis = require("ioredis");
 
 let io;
-
-
 const redisUrl = process.env.REDIS_URL;
 
-const pubClient = new Redis(redisUrl, {
+const redisConfig = {
     tls: {
         rejectUnauthorized: false
     },
     maxRetriesPerRequest: null,
-    keepAlive: 30000, 
+    enableReadyCheck: true,
     retryStrategy(times) {
-        const delay = Math.min(times * 50, 2000);
+        const delay = Math.min(times * 100, 3000);
         return delay;
     }
-});
+};
 
-const subClient = pubClient.duplicate();
+const pubClient = new Redis(redisUrl, redisConfig);
+const subClient = new Redis(redisUrl, redisConfig);
 
 pubClient.on('connect', () => {
-    console.log('✅ Redis Connected Successfully!');
+    console.log('✅ Redis Pub Connected!');
 });
 
 pubClient.on('ready', () => {
-    console.log('🚀 Redis Client Ready for Commands!');
+    console.log('🚀 Redis Pub Client Ready!');
 });
 
 pubClient.on('error', (err) => {
@@ -63,16 +62,21 @@ const initSocket = (server) => {
 
 
         socket.on("register_user", async (userId) => {
-             console.log("A user ID : " + userId);
-            
+            console.log("A user ID received: " + userId);
+
             try {
+                if (!userId) {
+                    console.log("❌ Received empty userId!");
+                    return;
+                }
+
+                // Redis e save korar age check kore neoa pubClient ready kina
                 await pubClient.hset("online_users", userId.toString(), socket.id);
-                console.log(`User registered in Redis: ${userId} -> ${socket.id}`);
+                console.log(`✅ User successfully registered in Redis: ${userId} -> ${socket.id}`);
             }
             catch (err) {
-                console.error("Error registering user in Redis:", err);
+                console.error("❌ Error registering user in Redis:", err.message);
             }
-           
         });
 
 
@@ -80,8 +84,8 @@ const initSocket = (server) => {
 
         socket.on('disconnect', async () => {
 
-              console.log("A user disconnected: " + socket.id);
-       
+            console.log("A user disconnected: " + socket.id);
+
             try {
                 const users = await pubClient.hgetall("online_users");
                 for (let [userId, socketId] of Object.entries(users)) {
