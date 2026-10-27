@@ -60,6 +60,8 @@ const initSocket = (server) => {
 
 
         socket.on('disconnect', async () => {
+
+              console.log("A user disconnected: " + socket.id);
        
             try {
                 const users = await pubClient.hgetall("online_users");
