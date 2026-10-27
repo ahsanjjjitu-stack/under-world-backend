@@ -3,22 +3,22 @@ const { createAdapter } = require("@socket.io/redis-adapter");
 const Redis = require("ioredis");
 
 let io;
+
 const redisUrl = process.env.REDIS_URL;
 
 const redisConfig = {
-    tls: {
-        rejectUnauthorized: false
-    },
     maxRetriesPerRequest: null,
-    enableReadyCheck: true,
+    enableReadyCheck: false,   // এটা false কর
+    connectTimeout: 10000,
     retryStrategy(times) {
-        const delay = Math.min(times * 100, 3000);
-        return delay;
+        return Math.min(times * 200, 5000);
     }
 };
 
 const pubClient = new Redis(redisUrl, redisConfig);
-const subClient = new Redis(redisUrl, redisConfig);
+const subClient = pubClient.duplicate();
+
+
 
 pubClient.on('connect', () => {
     console.log('✅ Redis Pub Connected!');
@@ -35,6 +35,12 @@ pubClient.on('error', (err) => {
 subClient.on('error', (err) => {
     console.error('❌ Redis Sub Error:', err.message);
 });
+
+pubClient.on('close', () => console.log('🔌 Pub closed'));
+pubClient.on('reconnecting', () => console.log('🔁 Pub reconnecting...'));
+pubClient.on('end', () => console.log('⛔ Pub ended'));
+subClient.on('connect', () => console.log('✅ Sub Connected'));
+subClient.on('ready', () => console.log('🚀 Sub Ready'));
 
 
 
