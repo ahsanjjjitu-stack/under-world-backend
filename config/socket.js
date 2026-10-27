@@ -4,56 +4,60 @@ const Redis = require("ioredis");
 
 let io;
 
-const redisUrl = process.env.REDIS_URL;
 
-const redisConfig = {
+
+
+const pubClient = new Redis(process.env.REDIS_URL, {
+    tls: { rejectUnauthorized: false },
     maxRetriesPerRequest: null,
-    enableReadyCheck: false,   // এটা false কর
-    connectTimeout: 10000,
-    retryStrategy(times) {
-        return Math.min(times * 200, 5000);
-    }
-};
-
-const pubClient = new Redis(redisUrl, redisConfig);
+    keepAlive: 30000
+});
 const subClient = pubClient.duplicate();
 
 
 
 
 
+const appRedis = new Redis(process.env.REDIS_URL, {
+    tls: { rejectUnauthorized: false },
+    maxRetriesPerRequest: null,
+    keepAlive: 30000,
+    retryStrategy(times) {
+        return Math.min(times * 50, 2000);
+    }
+});
+
+
+
+appRedis.on('connect', () => console.log('✅ App Redis Connected Successfully!'));
+appRedis.on('error', (err) => console.error('❌ App Redis Error:', err.message));
+
+pubClient.on('error', (err) => console.error('❌ Redis Pub Error:', err.message));
+subClient.on('error', (err) => console.error('❌ Redis Sub Error:', err.message));
+
 
 
 
 const initSocket = (server) => {
-
     io = new Server(server, {
         cors: { origin: "*" }
     });
 
-
     io.adapter(createAdapter(pubClient, subClient));
-
-
     console.log("🚀 Socket.io initialized with Redis Adapter!");
 
-
     io.on("connection", (socket) => {
-
         console.log("A user connected: " + socket.id);
-
 
         socket.on("register_user", async (userId) => {
             console.log("A user ID received: " + userId);
-
             try {
                 if (!userId) {
                     console.log("❌ Received empty userId!");
                     return;
                 }
 
-                // Redis e save korar age check kore neoa pubClient ready kina
-                await pubClient.hset("online_users", userId.toString(), socket.id);
+                await appRedis.hset("online_users", userId.toString(), socket.id);
                 console.log(`✅ User successfully registered in Redis: ${userId} -> ${socket.id}`);
             }
             catch (err) {
@@ -63,16 +67,13 @@ const initSocket = (server) => {
 
 
 
-
         socket.on('disconnect', async () => {
-
             console.log("A user disconnected: " + socket.id);
-
             try {
-                const users = await pubClient.hgetall("online_users");
+                const users = await appRedis.hgetall("online_users");
                 for (let [userId, socketId] of Object.entries(users)) {
                     if (socketId === socket.id) {
-                        await pubClient.hdel("online_users", userId);
+                        await appRedis.hdel("online_users", userId);
                         console.log(`User disconnected and removed from Redis: ${userId}`);
                         break;
                     }
@@ -81,15 +82,12 @@ const initSocket = (server) => {
             catch (err) {
                 console.error("Error on disconnect in Redis:", err);
             }
-
         });
     });
 
-
     return io;
+};
 
-
-}
 
 
 
@@ -98,7 +96,8 @@ const getIO = () => {
         throw new Error("Socket.io not initialized");
     }
     return io;
-}
+};
+
 
 
 
@@ -107,7 +106,7 @@ const getIO = () => {
 
 const getSocketId = async (userId) => {
     try {
-        const redisQuery = pubClient.hget("online_users", userId.toString());
+        const redisQuery = appRedis.hget("online_users", userId.toString());
         const timeout = new Promise((_, reject) => 
             setTimeout(() => reject(new Error("Redis operation timed out")), 3000)
         );
@@ -115,10 +114,14 @@ const getSocketId = async (userId) => {
         return await Promise.race([redisQuery, timeout]);
     }
     catch (err) {
-        console.error("⚠️ Redis getSocketId warning/timeout, falling back to FCM:", err.message);
-        return null; 
+        console.error("⚠️ Redis getSocketId warning/timeout:", err.message);
+        return null;
     }
-};
+}
+
+
+
+
 
 
 module.exports = { initSocket, getIO, getSocketId };
