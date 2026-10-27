@@ -118,52 +118,43 @@ const placeOrder = async (req, res) => {
 // order confirm for admin controller 
 
 const confirmOrder = async (req, res) => {
-
     try {
-
         const { orderId } = req.params;
-
 
         const order = await Order.findById(orderId);
         if (!order) {
             return res.status(404).json({ success: false, message: "Order not found" });
         }
 
-
         order.orderStatus = 'confirmed';
         const updatedOrder = await order.save();
 
-
-        try {
-
-            const io = getIO();
-            const userId = order.userId;
-
-            const user = await User.findById(userId);
-
-            if (user) {
-                await sendAppNotification(io, {
-                    recipientId: user._id,
-                    title: "Your Order confirmed!",
-                    body: `Order number #${updatedOrder._id.toString().slice(-6)} Successfully confirmed.`,
-                    type: 'ORDER_CONFIRMED',
-                    orderId: updatedOrder._id,
-                    fcmToken: user.fcmToken
-                });
-                console.log(`Order confirmation notification sent to user: ${userId}`);
-            }
-
-        }
-        catch (notifError) {
-            console.error("Error sending notification to user:", notifError);
-        }
-
-
-
-        return res.status(200).json({
+        res.status(200).json({
             success: true,
             message: "Order confirmed successfully",
             data: updatedOrder
+        });
+
+        setImmediate(async () => {
+            try {
+                const io = getIO();
+                const userId = order.userId;
+                const user = await User.findById(userId);
+
+                if (user) {
+                    await sendAppNotification(io, {
+                        recipientId: user._id,
+                        title: "Your Order confirmed!",
+                        body: `Order number #${updatedOrder._id.toString().slice(-6)} Successfully confirmed.`,
+                        type: 'ORDER_CONFIRMED',
+                        orderId: updatedOrder._id,
+                        fcmToken: user.fcmToken
+                    });
+                    console.log(`Order confirmation notification sent to user: ${userId}`);
+                }
+            } catch (notifError) {
+                console.error("Error sending notification in background:", notifError);
+            }
         });
 
     }
@@ -175,10 +166,7 @@ const confirmOrder = async (req, res) => {
             error: error.message
         });
     }
-
-
-}
-
+};
 
 
 
