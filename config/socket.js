@@ -22,8 +22,21 @@ const subClient = pubClient.duplicate();
 
 
 
-pubClient.on('error', (err) => console.error('Redis Pub Error:', err.message));
-subClient.on('error', (err) => console.error('Redis Sub Error:', err.message));
+pubClient.on('connect', () => {
+    console.log('✅ Redis Connected Successfully!');
+});
+
+pubClient.on('ready', () => {
+    console.log('🚀 Redis Client Ready for Commands!');
+});
+
+pubClient.on('error', (err) => {
+    console.error('❌ Redis Pub Error:', err.message);
+});
+
+subClient.on('error', (err) => {
+    console.error('❌ Redis Sub Error:', err.message);
+});
 
 
 const initSocket = (server) => {
