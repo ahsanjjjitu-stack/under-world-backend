@@ -1,9 +1,10 @@
 const Notification = require('../models/Notification');
 const sendFCMNotification = require('./sendNotification');
 const User = require('../models/User');
+const { getSocketId } = require('../config/socket');
 
 
-const sendAppNotification = async (io, getSocketId, data) => {
+const sendAppNotification = async (io, data) => {
     try {
 
         const { recipientId, title, body, type, orderId, fcmToken } = data;
@@ -21,7 +22,7 @@ const sendAppNotification = async (io, getSocketId, data) => {
 
 
 
-        const recipientSocketId = getSocketId ? getSocketId.get(recipientId.toString()) : null;
+        const recipientSocketId = await getSocketId(recipientId.toString());
 
         if (recipientSocketId && io) {
             io.to(recipientSocketId).emit('new_notification', savedNotification);
